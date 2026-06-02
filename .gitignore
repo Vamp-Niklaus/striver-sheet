@@ -1,0 +1,18 @@
+.env
+__pycache__/
+*.pyc
+venv/
+env/
+.gemini/
+striver/
+data/
+scripts/
+scratch_*
+latest.html
+extracted_state.json
+latest_files/
+Strivers A2Z DSA Course_Sheet*
+*.pdf
+*.docx
+import_seed.py
+/*.html

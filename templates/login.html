@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Goal Striver – Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0d0f13;
+      color: #e4e4e7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .logo-tag {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: #ee4c2b;
+      margin-bottom: 8px;
+    }
+    .logo h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tabs {
+      display: flex;
+      background: #181a20;
+      border: 1px solid #2c303a;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: #71717a;
+      font: 600 14px 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      background: #ee4c2b;
+      color: #fff;
+    }
+
+    .card {
+      background: #181a20;
+      border: 1px solid #2c303a;
+      border-top: 3px solid #ee4c2b;
+      border-radius: 10px;
+      padding: 28px;
+    }
+
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #a1a1aa;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 11px 14px;
+      background: #0d0f13;
+      border: 1px solid #2c303a;
+      border-radius: 8px;
+      color: #f4f4f5;
+      font: 14px 'Inter', sans-serif;
+      transition: border-color .2s;
+      outline: none;
+    }
+    input:focus { border-color: #ee4c2b; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      background: #ee4c2b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font: 600 15px 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    .submit-btn:hover { background: #ff5e3a; }
+    .submit-btn:active { transform: scale(.98); }
+
+    .error-msg {
+      background: rgba(238, 76, 43, .12);
+      border: 1px solid rgba(238, 76, 43, .3);
+      color: #ff6b4a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="logo">
+      <p class="logo-tag">Striver A2Z Tracker</p>
+      <h1>Goal Striver</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('signin', this)">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('register', this)">Register</button>
+    </div>
+
+    <div class="card">
+      {% if error %}
+      <div class="error-msg">{{ error }}</div>
+      {% endif %}
+
+      <!-- Sign In -->
+      <form id="signin-panel" class="form-panel active" method="POST">
+        <input type="hidden" name="action" value="signin">
+        <div class="form-group">
+          <label for="si-username">Username</label>
+          <input id="si-username" name="username" type="text" placeholder="e.g. rakesh" required autofocus>
+        </div>
+        <div class="form-group">
+          <label for="si-password">Password</label>
+          <input id="si-password" name="password" type="password" placeholder="Your password" required>
+        </div>
+        <button class="submit-btn" type="submit">Sign In →</button>
+      </form>
+
+      <!-- Register -->
+      <form id="register-panel" class="form-panel" method="POST">
+        <input type="hidden" name="action" value="register">
+        <div class="form-group">
+          <label for="r-username">Choose a Username</label>
+          <input id="r-username" name="username" type="text" placeholder="e.g. yourname" required>
+        </div>
+        <div class="form-group">
+          <label for="r-password">Choose a Password</label>
+          <input id="r-password" name="password" type="password" placeholder="Your password" required>
+        </div>
+        <button class="submit-btn" type="submit">Create Account →</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(panel, btn) {
+      document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(panel + '-panel').classList.add('active');
+      btn.classList.add('active');
+    }
+    // If there was an error and it was a register action, auto-switch to register tab
+    {% if error %}
+    const form = document.querySelector('form[method="POST"]');
+    {% endif %}
+  </script>
+</body>
+</html>

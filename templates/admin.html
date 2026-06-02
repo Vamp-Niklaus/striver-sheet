@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Goal Striver Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-tag">Management</span>
+        <h1>Add/Edit Problem</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="username-chip">👤 {{ username }}</span>
+        <a href="/" class="nav-btn nav-btn--ghost">Practice</a>
+        <a href="/logout" class="nav-btn nav-btn--ghost">Logout</a>
+      </div>
+    </header>
+
+    <main class="admin-page">
+      <form id="adminForm" class="admin-form">
+        <input type="hidden" name="id">
+        <label>Step <input name="step" list="steps" required placeholder="Step 19 : Custom"></label>
+        <datalist id="steps"></datalist>
+        <label>Lecture <input name="lecture" list="lectures" required placeholder="Custom"></label>
+        <datalist id="lectures"></datalist>
+        <label>Problem title <input name="title" list="titles" required placeholder="Select or type new"></label>
+        <datalist id="titles"></datalist>
+        <label>Difficulty <input name="difficulty" list="difficulties"></label>
+        <datalist id="difficulties"></datalist>
+        <label>Article URL <input name="article" type="url"></label>
+        <label>YouTube URL <input name="youtube" type="url"></label>
+        <div class="dynamic-urls">
+          <label>Practice Links</label>
+          <div id="urlList"></div>
+        </div>
+        <label>Notes <textarea name="notes" rows="6"></textarea></label>
+        <div class="checks">
+          <label><input name="done" type="checkbox"> Done</label>
+          <label><input name="revision" type="checkbox"> Revision</label>
+        </div>
+        <div class="admin-actions">
+          <button type="submit" id="submitBtn">Add problem</button>
+          <button type="button" id="deleteBtn" style="display: none;">Delete problem</button>
+        </div>
+        <p id="adminMessage" class="muted"></p>
+      </form>
+    </main>
+
+    <script>
+    var currentUser = "{{ username }}";
+  </script>
+  <script src="/static/admin.js"></script>
+  </body>
+</html>
