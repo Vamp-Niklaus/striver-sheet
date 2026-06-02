@@ -61,7 +61,8 @@ function practiceLinks(p) {
 
 function fillSelect(sel, values) {
   const existing = new Set([...sel.options].map(o => o.value));
-  [...new Set(values.filter(Boolean))].sort().forEach(v => {
+  const uniqueItems = [...new Set(values.map(v => v ? String(v).trim() : "").filter(Boolean))];
+  uniqueItems.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).forEach(v => {
     if (!existing.has(v)) {
       const o = document.createElement('option');
       o.value = o.textContent = v;
