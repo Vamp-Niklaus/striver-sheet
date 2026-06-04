@@ -84,7 +84,7 @@ function addUrlRow(val) {
 }
 
 function handleTitleChange() {
-  const selectedTitle = titleInput.value;
+  const selectedTitle = titleInput.value.trim();
   const existingProblem = allProblems.find((p) => p.title === selectedTitle);
   
   if (existingProblem) {
@@ -128,6 +128,12 @@ function handleTitleChange() {
     document.querySelector('input[name="article"]').value = "";
     document.querySelector('input[name="youtube"]').value = "";
     document.querySelector('textarea[name="notes"]').value = "";
+    
+    // Only clear step and lecture if the title is completely empty
+    if (selectedTitle === "") {
+      stepInput.value = "";
+      lectureInput.value = "";
+    }
     
     renderUrls([]);
     
