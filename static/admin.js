@@ -89,6 +89,8 @@ function handleTitleChange() {
   
   if (existingProblem) {
     idInput.value = existingProblem.id;
+    stepInput.value = existingProblem.step || "";
+    lectureInput.value = existingProblem.lecture || "";
     document.querySelector('input[name="difficulty"]').value = existingProblem.difficulty || "";
     document.querySelector('input[name="article"]').value = existingProblem.article || "";
     document.querySelector('input[name="youtube"]').value = existingProblem.youtube || "";
