@@ -123,17 +123,19 @@ function handleTitleChange() {
       message.textContent = "You cannot edit or delete default problems.";
     }
   } else {
+    // If idInput.value is not empty, it means we just transitioned from an existing problem to a new one.
+    // In this case, we wipe step and lecture to give a clean slate.
+    // Otherwise, we leave them alone so the user can pick step/lecture before typing a title.
+    if (idInput.value !== "" || selectedTitle === "") {
+      stepInput.value = "";
+      lectureInput.value = "";
+    }
+
     idInput.value = "";
     document.querySelector('input[name="difficulty"]').value = "";
     document.querySelector('input[name="article"]').value = "";
     document.querySelector('input[name="youtube"]').value = "";
     document.querySelector('textarea[name="notes"]').value = "";
-    
-    // Only clear step and lecture if the title is completely empty
-    if (selectedTitle === "") {
-      stepInput.value = "";
-      lectureInput.value = "";
-    }
     
     renderUrls([]);
     
@@ -153,18 +155,21 @@ fetch("/api/problems")
     updateLectures();
     updateTitles();
     renderUrls([]); // initialize empty url box
+    
+    // Deep linking: Check if ?title= exists in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillTitle = urlParams.get("title");
+    if (prefillTitle) {
+      titleInput.value = prefillTitle;
+      handleTitleChange();
+    }
   });
 
 stepInput.addEventListener("input", () => {
-  lectureInput.value = "";
-  titleInput.value = "";
-  handleTitleChange();
   updateLectures();
   updateTitles();
 });
 lectureInput.addEventListener("input", () => {
-  titleInput.value = "";
-  handleTitleChange();
   updateTitles();
 });
 titleInput.addEventListener("input", handleTitleChange);
