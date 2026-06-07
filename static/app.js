@@ -373,10 +373,16 @@ root.addEventListener('change', async e => {
 // ── Note save ─────────────────────────────────────────
 document.getElementById('saveNote').addEventListener('click', async () => {
   if (!noteProblem) return;
-  noteProblem.notes = noteText.value;
+  noteProblem.notes = noteMirror ? noteMirror.getValue() : noteText.value;
   await patchProblem(noteProblem.id, { notes: noteProblem.notes });
   noteDialog.close();
   render();
+});
+
+noteDialog.addEventListener('click', (e) => {
+  if (e.target === noteDialog) {
+    noteDialog.close();
+  }
 });
 
 // ── Filter listeners ──────────────────────────────────

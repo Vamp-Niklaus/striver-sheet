@@ -326,6 +326,13 @@
       document.getElementById('addModal').classList.remove('active');
     }
 
+    // Close modal on backdrop click
+    document.getElementById('addModal').addEventListener('click', (e) => {
+      if (e.target.id === 'addModal') {
+        closeAddModal();
+      }
+    });
+
     async function submitQuickAdd() {
       const btn = document.getElementById('modalSubmitBtn');
       

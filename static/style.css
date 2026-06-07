@@ -396,9 +396,9 @@ dialog {
   background: var(--surface-2);
   color: var(--text);
   padding: 0;
-  width: 90vw;
-  height: 90vh;
-  max-width: 1400px;
+  width: 80vw;
+  max-height: 85vh;
+  max-width: 1000px;
   font-family: 'Inter', sans-serif;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
