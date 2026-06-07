@@ -244,7 +244,7 @@ function render() {
             <td>${diffBadge(p.difficulty)}</td>
             <td style="white-space: nowrap;">
               <button class="star-btn ${p.revision ? 'on' : 'off'}" data-action="revision" data-id="${escHtml(p.id)}" title="Toggle revision">★</button>
-              <a class="icon-link" href="/admin?title=${encodeURIComponent(p.title)}" target="_blank" title="Edit problem" style="margin-left: 8px; vertical-align: middle;">${ICONS.edit}</a>
+              <a class="icon-link" href="/admin/edit?title=${encodeURIComponent(p.title)}" target="_blank" title="Edit problem" style="margin-left: 8px; vertical-align: middle;">${ICONS.edit}</a>
             </td>
           </tr>`;
         }

@@ -121,14 +121,15 @@
           <label>YouTube URL</label>
           <input type="text" id="modalYoutube" placeholder="https://youtube.com/...">
         </div>
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea id="modalNotes" rows="3" style="width: 100%; background: #0d0f13; border: 1px solid #3b3f4a; color: #fff; padding: 10px; border-radius: 6px; font-family: 'Inter';"></textarea>
-        </div>
         
         <div class="dynamic-urls">
           <label>Practice Links</label>
           <div id="modalPracticeLinks"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="modalNotes" rows="3" style="width: 100%; background: #0d0f13; border: 1px solid #3b3f4a; color: #fff; padding: 10px; border-radius: 6px; font-family: 'Inter';"></textarea>
         </div>
       </div>
       
@@ -444,11 +445,12 @@
       } else {
         // Render Problems
         const l = tree[currentStepIndex].lectures[currentLectureIndex];
-        l.problems.forEach((p, idx) => {
-          html += `<div class="list-item" data-idx="${idx}">
+        l.problems.forEach(p => {
+          html += `<div class="list-item" style="padding-left: 20px;">
             <div class="drag-handle"></div>
             <div class="item-icon">📄</div>
-            <div class="item-content" style="cursor:default;">${escHtml(p.title)}</div>
+            <div class="item-content" style="flex: 1;">${escHtml(p.title)}</div>
+            <a href="/admin/edit?title=${encodeURIComponent(p.title)}" target="_blank" style="text-decoration: none; font-size: 14px; margin-left: 10px;" title="Edit problem">✏️</a>
           </div>`;
         });
         addBtn.textContent = "+ Add new Problem";

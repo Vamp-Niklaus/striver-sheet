@@ -137,17 +137,17 @@ def logout():
 
 
 @app.get("/admin")
-def admin():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    return render_template("admin.html", username=session['user_id'])
-
-
-@app.get("/admin/reorder")
 def reorder_page():
     if not session.get('user_id'):
         return redirect(url_for('login'))
     return render_template("reorder.html", username=session['user_id'])
+
+
+@app.get("/admin/edit")
+def admin():
+    if not session.get('user_id'):
+        return redirect(url_for('login'))
+    return render_template("admin.html", username=session['user_id'])
 
 
 @app.post("/api/reorder")
