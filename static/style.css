@@ -400,6 +400,16 @@ dialog {
   max-width: 1000px;
   font-family: 'Inter', sans-serif;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease-in-out;
+}
+dialog.fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+  border: none;
+  border-top: 3px solid var(--brand);
 }
 dialog::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(4px); }
 

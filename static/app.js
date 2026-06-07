@@ -279,7 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   document.getElementById('maximizeNoteBtn').addEventListener('click', () => {
-    noteMirror.setOption("fullScreen", !noteMirror.getOption("fullScreen"));
+    noteDialog.classList.toggle('fullscreen');
+    setTimeout(() => noteMirror.refresh(), 50);
   });
 });
 
