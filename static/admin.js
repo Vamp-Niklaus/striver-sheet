@@ -85,7 +85,7 @@ function addUrlRow(val) {
 
 function handleTitleChange() {
   const selectedTitle = titleInput.value.trim();
-  const existingProblem = allProblems.find((p) => p.title === selectedTitle);
+  const existingProblem = allProblems.find((p) => p.title.trim() === selectedTitle);
   
   if (existingProblem) {
     idInput.value = existingProblem.id;
