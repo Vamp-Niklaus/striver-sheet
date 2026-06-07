@@ -161,12 +161,18 @@ function render() {
   for (const p of visible) {
     if (!groups[p.step]) groups[p.step] = { lectures: {}, total: 0, done: 0 };
     const g = groups[p.step];
-    if (!g.lectures[p.lecture]) g.lectures[p.lecture] = { problems: [], total: 0, done: 0 };
-    const l = g.lectures[p.lecture];
-    l.problems.push(p);
-    l.total++;
-    g.total++;
-    if (p.done) { l.done++; g.done++; }
+    
+    if (p.lecture !== "___STUB___") {
+      if (!g.lectures[p.lecture]) g.lectures[p.lecture] = { problems: [], total: 0, done: 0 };
+      const l = g.lectures[p.lecture];
+      
+      if (p.title !== "___STUB___") {
+        l.problems.push(p);
+        l.total++;
+        g.total++;
+        if (p.done) { l.done++; g.done++; }
+      }
+    }
   }
 
   // Build HTML
@@ -189,7 +195,7 @@ function render() {
 
     if (stepOpen) {
       html += `<div class="lectures-wrapper">`;
-      const sortedLectures = [...new Set(visible.filter(p => p.step === stepName).map(p => p.lecture))];
+      const sortedLectures = [...new Set(visible.filter(p => p.step === stepName && p.lecture !== "___STUB___").map(p => p.lecture))];
       for (const lecName of sortedLectures) {
         const lec     = step.lectures[lecName];
         const lecKey  = stepName + '|' + lecName;

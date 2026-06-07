@@ -78,32 +78,57 @@
 
   <!-- Quick Add Modal -->
   <div class="modal-overlay" id="addModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
       <h2 id="modalTitle">Quick Add</h2>
-      <div class="form-group">
+      
+      <div id="stepField" class="form-group">
         <label>Section Name (Step)</label>
         <input type="text" id="modalStep" placeholder="e.g. Step 1 : Basics">
       </div>
-      <div class="form-group">
+      
+      <div id="lectureField" class="form-group">
         <label>Subsection Name (Lecture)</label>
         <input type="text" id="modalLecture" placeholder="e.g. Lec 1: Introduction">
       </div>
-      <div class="form-group">
-        <label>Problem Title</label>
-        <input type="text" id="modalTitleInput" placeholder="Problem Name">
+      
+      <div id="problemFields">
+        <div class="form-group">
+          <label>Problem Title</label>
+          <input type="text" id="modalTitleInput" placeholder="Problem Name">
+        </div>
+        <div class="form-group">
+          <label>Difficulty</label>
+          <select id="modalDifficulty">
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Article URL</label>
+          <input type="text" id="modalArticle" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>YouTube URL</label>
+          <input type="text" id="modalYoutube" placeholder="https://youtube.com/...">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="modalNotes" rows="3" style="width: 100%; background: #0d0f13; border: 1px solid #3b3f4a; color: #fff; padding: 10px; border-radius: 6px; font-family: 'Inter';"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Practice Links</label>
+          <div id="modalPracticeLinks" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamic practice links go here -->
+          </div>
+          <button class="add-btn" style="padding: 8px; margin-top: 8px; text-align: center;" onclick="addPracticeLinkRow()">+ Add Link</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Difficulty</label>
-        <select id="modalDifficulty">
-          <option value="">Select Difficulty</option>
-          <option value="Easy">Easy</option>
-          <option value="Medium">Medium</option>
-          <option value="Hard">Hard</option>
-        </select>
-      </div>
+      
       <div class="form-actions">
         <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-        <button class="btn-submit" onclick="submitQuickAdd()" id="modalSubmitBtn">Add Problem</button>
+        <button class="btn-submit" onclick="submitQuickAdd()" id="modalSubmitBtn">Save</button>
       </div>
     </div>
   </div>
@@ -133,14 +158,18 @@
         }
         const s = stepMap[p.step];
         
-        if (!s.lecMap[p.lecture]) {
-          const lecObj = { name: p.lecture, problems: [] };
-          s.lectures.push(lecObj);
-          s.lecMap[p.lecture] = lecObj;
+        if (p.lecture !== "___STUB___") {
+          if (!s.lecMap[p.lecture]) {
+            const lecObj = { name: p.lecture, problems: [] };
+            s.lectures.push(lecObj);
+            s.lecMap[p.lecture] = lecObj;
+          }
+          const l = s.lecMap[p.lecture];
+          
+          if (p.title !== "___STUB___") {
+            l.problems.push(p);
+          }
         }
-        const l = s.lecMap[p.lecture];
-        
-        l.problems.push(p);
       }
     }
 
@@ -183,36 +212,74 @@
       const stepInput = document.getElementById('modalStep');
       const lecInput = document.getElementById('modalLecture');
       const titleInput = document.getElementById('modalTitleInput');
+    function addPracticeLinkRow() {
+      const container = document.getElementById('modalPracticeLinks');
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '8px';
+      row.innerHTML = `
+        <select class="link-platform" style="flex: 1;">
+          <option value="tuf">Take U Forward</option>
+          <option value="leetcode">LeetCode</option>
+          <option value="naukri">Naukri/Coding Ninjas</option>
+          <option value="gfg">GeeksforGeeks</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" class="link-url" placeholder="URL" style="flex: 2;">
+        <button onclick="this.parentElement.remove()" style="background:transparent; border:none; color:#ee4c2b; cursor:pointer;">❌</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function openAddModal() {
+      const modal = document.getElementById('addModal');
+      const stepInput = document.getElementById('modalStep');
+      const lecInput = document.getElementById('modalLecture');
+      const titleInput = document.getElementById('modalTitleInput');
       const diffInput = document.getElementById('modalDifficulty');
+      const articleInput = document.getElementById('modalArticle');
+      const youtubeInput = document.getElementById('modalYoutube');
+      const notesInput = document.getElementById('modalNotes');
+      const practiceContainer = document.getElementById('modalPracticeLinks');
+      
+      const stepField = document.getElementById('stepField');
+      const lecField = document.getElementById('lectureField');
+      const probFields = document.getElementById('problemFields');
       const modalTitle = document.getElementById('modalTitle');
       
+      // Reset fields
       stepInput.value = '';
       lecInput.value = '';
       titleInput.value = '';
-      diffInput.value = '';
-      
-      stepInput.disabled = false;
-      lecInput.disabled = false;
+      diffInput.value = 'Easy';
+      articleInput.value = '';
+      youtubeInput.value = '';
+      notesInput.value = '';
+      practiceContainer.innerHTML = '';
+      addPracticeLinkRow(); // Add one default row
 
       if (currentStepIndex === null) {
         modalTitle.textContent = "Add New Section";
+        stepField.style.display = "block";
+        lecField.style.display = "none";
+        probFields.style.display = "none";
       } else if (currentLectureIndex === null) {
         modalTitle.textContent = "Add New Subsection";
-        stepInput.value = tree[currentStepIndex].name;
-        stepInput.disabled = true;
+        stepField.style.display = "none";
+        lecField.style.display = "block";
+        probFields.style.display = "none";
       } else {
         modalTitle.textContent = "Add New Problem";
-        stepInput.value = tree[currentStepIndex].name;
-        lecInput.value = tree[currentStepIndex].lectures[currentLectureIndex].name;
-        stepInput.disabled = true;
-        lecInput.disabled = true;
+        stepField.style.display = "none";
+        lecField.style.display = "none";
+        probFields.style.display = "block";
       }
       
       modal.classList.add('active');
       
-      // Auto-focus the next empty field
-      if (!stepInput.value) stepInput.focus();
-      else if (!lecInput.value) lecInput.focus();
+      // Auto-focus
+      if (currentStepIndex === null) stepInput.focus();
+      else if (currentLectureIndex === null) lecInput.focus();
       else titleInput.focus();
     }
 
@@ -221,25 +288,13 @@
     }
 
     async function submitQuickAdd() {
-      const stepVal = document.getElementById('modalStep').value.trim();
-      const lecVal = document.getElementById('modalLecture').value.trim();
-      const titleVal = document.getElementById('modalTitleInput').value.trim();
-      const diffVal = document.getElementById('modalDifficulty').value;
       const btn = document.getElementById('modalSubmitBtn');
       
-      if (!stepVal || !lecVal || !titleVal) {
-        alert("Please fill in Section, Subsection, and Problem Title.");
-        return;
-      }
-      
-      btn.disabled = true;
-      btn.textContent = "Saving...";
-      
-      const payload = {
-        step: stepVal,
-        lecture: lecVal,
-        title: titleVal,
-        difficulty: diffVal,
+      let payload = {
+        step: "",
+        lecture: "",
+        title: "___STUB___",
+        difficulty: "Easy",
         article: "",
         youtube: "",
         notes: "",
@@ -247,6 +302,45 @@
         revision: false,
         practice: { tuf: [], naukri: [], leetcode: [], gfg: [], other: [] }
       };
+
+      if (currentStepIndex === null) {
+        // Adding a Step Stub
+        const stepVal = document.getElementById('modalStep').value.trim();
+        if (!stepVal) return alert("Please enter Section Name");
+        payload.step = stepVal;
+        payload.lecture = "___STUB___";
+      } else if (currentLectureIndex === null) {
+        // Adding a Lecture Stub
+        const lecVal = document.getElementById('modalLecture').value.trim();
+        if (!lecVal) return alert("Please enter Subsection Name");
+        payload.step = tree[currentStepIndex].name;
+        payload.lecture = lecVal;
+      } else {
+        // Adding a real Problem
+        const titleVal = document.getElementById('modalTitleInput').value.trim();
+        if (!titleVal) return alert("Please enter Problem Title");
+        
+        payload.step = tree[currentStepIndex].name;
+        payload.lecture = tree[currentStepIndex].lectures[currentLectureIndex].name;
+        payload.title = titleVal;
+        payload.difficulty = document.getElementById('modalDifficulty').value;
+        payload.article = document.getElementById('modalArticle').value.trim();
+        payload.youtube = document.getElementById('modalYoutube').value.trim();
+        payload.notes = document.getElementById('modalNotes').value.trim();
+        
+        // Parse practice links
+        const rows = document.getElementById('modalPracticeLinks').children;
+        for (let i = 0; i < rows.length; i++) {
+          const platform = rows[i].querySelector('.link-platform').value;
+          const url = rows[i].querySelector('.link-url').value.trim();
+          if (url) {
+            payload.practice[platform].push(url);
+          }
+        }
+      }
+      
+      btn.disabled = true;
+      btn.textContent = "Saving...";
       
       try {
         const res = await fetch('/api/problems', {
@@ -257,7 +351,6 @@
         
         if (res.ok) {
           closeAddModal();
-          // Reload data from server so tree is fresh
           await loadData();
         } else {
           const data = await res.json();
@@ -267,7 +360,7 @@
         alert("Error saving problem.");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Add Problem";
+        btn.textContent = "Save";
       }
     }
 
