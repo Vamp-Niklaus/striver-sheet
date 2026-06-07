@@ -265,10 +265,30 @@ function render() {
 }
 
 // ── Event delegation ──────────────────────────────────
+let noteMirror = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  noteMirror = CodeMirror.fromTextArea(document.getElementById('noteText'), {
+    mode: "javascript",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    matchBrackets: true,
+    indentUnit: 4,
+    viewportMargin: Infinity
+  });
+  
+  document.getElementById('maximizeNoteBtn').addEventListener('click', () => {
+    noteMirror.setOption("fullScreen", !noteMirror.getOption("fullScreen"));
+  });
+});
+
 root.addEventListener('click', async e => {
-  // Step header toggle (click anywhere on header row, or the chevron btn)
+  if (e.target.closest('a') || e.target.closest('input')) return;
+
+  // Step header toggle (click anywhere on header row)
   const stepHdr = e.target.closest('.step-header');
-  if (stepHdr && !e.target.closest('input, a, [data-action]')) {
+  if (stepHdr && !e.target.closest('input, a, [data-action], .chevron-btn')) {
     const name = stepHdr.dataset.step;
     if (name) {
       expandedSteps[name] = expandedSteps[name] === false ? true : false;
@@ -280,10 +300,31 @@ root.addEventListener('click', async e => {
 
   // Lecture header toggle
   const lecHdr = e.target.closest('.lecture-header');
-  if (lecHdr && !e.target.closest('input, a, [data-action]')) {
+  if (lecHdr && !e.target.closest('input, a, [data-action], .chevron-btn')) {
     const key = lecHdr.dataset.lec;
     if (key) {
       expandedLectures[key] = expandedLectures[key] === false ? true : false;
+      render();
+      scheduleSave();
+      return;
+    }
+  }
+
+  // Chevron explicit toggle
+  const chevron = e.target.closest('.chevron-btn');
+  if (chevron) {
+    const stepHead = e.target.closest('.step-header');
+    if (stepHead) {
+      const s = stepHead.dataset.step;
+      expandedSteps[s] = expandedSteps[s] === false ? true : false;
+      render();
+      scheduleSave();
+      return;
+    }
+    const lecHead = e.target.closest('.lecture-header');
+    if (lecHead) {
+      const l = lecHead.dataset.lec;
+      expandedLectures[l] = expandedLectures[l] === false ? true : false;
       render();
       scheduleSave();
       return;
@@ -295,9 +336,11 @@ root.addEventListener('click', async e => {
   if (noteBtn) {
     noteProblem = allProblems.find(p => p.id === noteBtn.dataset.id);
     if (noteProblem) {
-      noteTitle.textContent = noteProblem.title;
-      noteText.value = noteProblem.notes || '';
+      document.getElementById('noteTitle').textContent = `Notes: ${noteProblem.title}`;
+      noteMirror.setValue(noteProblem.notes || '');
+      noteMirror.setOption("fullScreen", false);
       noteDialog.showModal();
+      setTimeout(() => noteMirror.refresh(), 50);
     }
     return;
   }

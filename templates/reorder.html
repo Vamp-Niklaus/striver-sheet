@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/display/fullscreen.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/display/fullscreen.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background: #0d0f13; color: #e4e4e7; margin: 0; padding: 24px; }
@@ -113,16 +122,16 @@
           <input type="text" id="modalYoutube" placeholder="https://youtube.com/...">
         </div>
         <div class="form-group">
-          <label>Notes</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin-bottom: 0;">Notes</label>
+            <button type="button" id="maximizeModalNoteBtn" class="add-btn" style="padding: 2px 8px; background: transparent; border: 1px solid #3b3f4a;">⛶ Fullscreen</button>
+          </div>
           <textarea id="modalNotes" rows="3" style="width: 100%; background: #0d0f13; border: 1px solid #3b3f4a; color: #fff; padding: 10px; border-radius: 6px; font-family: 'Inter';"></textarea>
         </div>
         
-        <div class="form-group">
+        <div class="dynamic-urls">
           <label>Practice Links</label>
-          <div id="modalPracticeLinks" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Dynamic practice links go here -->
-          </div>
-          <button class="add-btn" style="padding: 8px; margin-top: 8px; text-align: center;" onclick="addPracticeLinkRow()">+ Add Link</button>
+          <div id="modalPracticeLinks"></div>
         </div>
       </div>
       
@@ -138,6 +147,23 @@
     let currentStepIndex = null;
     let currentLectureIndex = null;
     let sortableInstance = null;
+    let modalNotesMirror = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      modalNotesMirror = CodeMirror.fromTextArea(document.getElementById("modalNotes"), {
+        mode: "javascript",
+        theme: "dracula",
+        lineNumbers: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        indentUnit: 4,
+        viewportMargin: Infinity
+      });
+      
+      document.getElementById("maximizeModalNoteBtn").addEventListener("click", () => {
+        modalNotesMirror.setOption("fullScreen", !modalNotesMirror.getOption("fullScreen"));
+      });
+    });
 
     async function loadData() {
       const res = await fetch('/api/problems');
@@ -206,22 +232,38 @@
       currentLectureIndex = lIdx;
       render();
     }
-    function addPracticeLinkRow() {
+    function addPracticeLinkRow(val = "") {
       const container = document.getElementById('modalPracticeLinks');
-      const row = document.createElement('div');
-      row.style.display = 'flex';
-      row.style.gap = '8px';
-      row.innerHTML = `
-        <select class="link-platform" style="flex: 1;">
-          <option value="tuf">Take U Forward</option>
-          <option value="leetcode">LeetCode</option>
-          <option value="naukri">Naukri/Coding Ninjas</option>
-          <option value="gfg">GeeksforGeeks</option>
-          <option value="other">Other</option>
-        </select>
-        <input type="text" class="link-url" placeholder="URL" style="flex: 2;">
-        <button onclick="this.parentElement.remove()" style="background:transparent; border:none; color:#ee4c2b; cursor:pointer;">❌</button>
-      `;
+      const row = document.createElement("div");
+      row.className = "url-row";
+      
+      const inp = document.createElement("input");
+      inp.type = "url";
+      inp.className = "url-input";
+      inp.value = val;
+      inp.placeholder = "https://...";
+      
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "remove-url";
+      btn.textContent = "✕";
+      
+      btn.onclick = () => {
+        if (container.children.length > 1) {
+          row.remove();
+        } else {
+          inp.value = "";
+        }
+      };
+      
+      inp.addEventListener("input", () => {
+        if (row === container.lastElementChild && inp.value.trim() !== "") {
+          addPracticeLinkRow("");
+        }
+      });
+      
+      row.appendChild(inp);
+      row.appendChild(btn);
       container.appendChild(row);
     }
 
@@ -248,7 +290,12 @@
       diffInput.value = 'Easy';
       articleInput.value = '';
       youtubeInput.value = '';
-      notesInput.value = '';
+      
+      if (modalNotesMirror) {
+        modalNotesMirror.setValue('');
+        modalNotesMirror.setOption("fullScreen", false);
+      }
+      
       practiceContainer.innerHTML = '';
       addPracticeLinkRow(); // Add one default row
 
@@ -270,6 +317,10 @@
       }
       
       modal.classList.add('active');
+      
+      if (modalNotesMirror) {
+        setTimeout(() => modalNotesMirror.refresh(), 50);
+      }
       
       // Auto-focus
       if (currentStepIndex === null) stepInput.focus();
@@ -320,17 +371,21 @@
         payload.difficulty = document.getElementById('modalDifficulty').value;
         payload.article = document.getElementById('modalArticle').value.trim();
         payload.youtube = document.getElementById('modalYoutube').value.trim();
-        payload.notes = document.getElementById('modalNotes').value.trim();
+        payload.notes = modalNotesMirror ? modalNotesMirror.getValue() : document.getElementById('modalNotes').value.trim();
         
         // Parse practice links
-        const rows = document.getElementById('modalPracticeLinks').children;
-        for (let i = 0; i < rows.length; i++) {
-          const platform = rows[i].querySelector('.link-platform').value;
-          const url = rows[i].querySelector('.link-url').value.trim();
-          if (url) {
-            payload.practice[platform].push(url);
-          }
-        }
+        const allUrls = Array.from(document.getElementById('modalPracticeLinks').querySelectorAll('.url-input'))
+          .map((inp) => inp.value.trim())
+          .filter((u) => u);
+          
+        allUrls.forEach((u) => {
+          const lower = u.toLowerCase();
+          if (lower.includes('takeuforward.org')) payload.practice.tuf.push(u);
+          else if (lower.includes('naukri.com') || lower.includes('codingninjas.com')) payload.practice.naukri.push(u);
+          else if (lower.includes('leetcode.com')) payload.practice.leetcode.push(u);
+          else if (lower.includes('geeksforgeeks.org')) payload.practice.gfg.push(u);
+          else payload.practice.other.push(u);
+        });
       }
       
       btn.disabled = true;

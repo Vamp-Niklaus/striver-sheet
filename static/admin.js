@@ -9,6 +9,23 @@ const message = document.getElementById("adminMessage");
 const urlList = document.getElementById("urlList");
 
 let allProblems = [];
+let adminNotesMirror = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  adminNotesMirror = CodeMirror.fromTextArea(document.getElementById("adminNotes"), {
+    mode: "javascript",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    matchBrackets: true,
+    indentUnit: 4,
+    viewportMargin: Infinity
+  });
+  
+  document.getElementById("maximizeAdminNoteBtn").addEventListener("click", () => {
+    adminNotesMirror.setOption("fullScreen", !adminNotesMirror.getOption("fullScreen"));
+  });
+});
 
 function renderUrls(urls) {
   urlList.innerHTML = "";
@@ -62,7 +79,13 @@ function loadProblem(title) {
     document.querySelector('select[name="difficulty"]').value = existingProblem.difficulty || "";
     document.querySelector('input[name="article"]').value = existingProblem.article || "";
     document.querySelector('input[name="youtube"]').value = existingProblem.youtube || "";
-    document.querySelector('textarea[name="notes"]').value = existingProblem.notes || "";
+    
+    // Set CodeMirror value safely
+    if (adminNotesMirror) {
+      adminNotesMirror.setValue(existingProblem.notes || "");
+      setTimeout(() => adminNotesMirror.refresh(), 50);
+    }
+    
     document.querySelector('input[name="done"]').checked = existingProblem.done || false;
     document.querySelector('input[name="revision"]').checked = existingProblem.revision || false;
     
@@ -156,7 +179,7 @@ form.addEventListener("submit", async (event) => {
     difficulty: data.difficulty,
     article: data.article,
     youtube: data.youtube,
-    notes: data.notes,
+    notes: adminNotesMirror ? adminNotesMirror.getValue() : data.notes,
     done: form.done.checked,
     revision: form.revision.checked,
     practice: practice
