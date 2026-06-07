@@ -397,7 +397,7 @@ dialog {
   color: var(--text);
   padding: 0;
   width: 80vw;
-  max-height: 85vh;
+  height: 85vh;
   max-width: 1000px;
   font-family: 'Inter', sans-serif;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -412,7 +412,7 @@ dialog form {
 
 dialog .CodeMirror {
   flex-grow: 1;
-  height: auto !important;
+  height: 100% !important;
 }
 .dialog-head {
   display: flex;
