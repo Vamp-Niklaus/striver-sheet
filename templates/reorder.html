@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reorder Hierarchy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0d0f13; color: #e4e4e7; margin: 0; padding: 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 24px; color: #fff; }
+    .save-btn { background: #ee4c2b; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter'; }
+    .save-btn:hover { background: #ff5e3a; }
+    .back-btn { color: #a1a1aa; text-decoration: none; padding: 10px; font-weight: 500; }
+    .back-btn:hover { color: #fff; }
+    
+    .list-group { min-height: 20px; }
+    .step-box { background: #181a20; border: 1px solid #2c303a; border-radius: 8px; margin-bottom: 12px; padding: 12px; }
+    .step-title { font-weight: 700; color: #fff; margin-bottom: 8px; cursor: grab; display: flex; align-items: center; }
+    .step-title::before { content: "☰"; margin-right: 8px; color: #71717a; }
+    
+    .lec-box { background: #20222a; border: 1px solid #3b3f4a; border-radius: 6px; margin-bottom: 8px; padding: 10px; margin-left: 20px; }
+    .lec-title { font-weight: 600; color: #e4e4e7; margin-bottom: 6px; cursor: grab; display: flex; align-items: center; }
+    .lec-title::before { content: "☰"; margin-right: 8px; color: #71717a; font-size: 12px; }
+    
+    .prob-item { background: #2c303a; border-radius: 4px; padding: 8px 12px; margin-bottom: 4px; margin-left: 20px; cursor: grab; display: flex; align-items: center; font-size: 14px; }
+    .prob-item::before { content: "⋮⋮"; margin-right: 10px; color: #71717a; font-size: 14px; letter-spacing: -2px; }
+    .prob-item:hover { background: #3b3f4a; }
+    
+    .sortable-ghost { opacity: 0.4; }
+    .sortable-drag { background: #ee4c2b !important; color: white !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <a href="/admin" class="back-btn">← Back to Admin</a>
+      <h1 style="display:inline-block; margin-left: 16px;">Reorder Problems</h1>
+    </div>
+    <div>
+      <span id="statusMessage" style="margin-right: 16px; color: #10b981;"></span>
+      <button class="save-btn" onclick="saveOrder()">Save New Order</button>
+    </div>
+  </header>
+
+  <div id="reorder-root" class="list-group">
+    <p style="color:#71717a;">Loading problems...</p>
+  </div>
+
+  <script>
+    let allProblems = [];
+
+    async function loadData() {
+      const res = await fetch('/api/problems');
+      const data = await res.json();
+      allProblems = data.problems || [];
+      render();
+    }
+
+    function render() {
+      const root = document.getElementById('reorder-root');
+      
+      // Group problems exactly in the order they currently appear
+      const groups = {};
+      const stepOrder = [];
+      
+      for (const p of allProblems) {
+        if (!groups[p.step]) {
+          groups[p.step] = { lectures: {}, lecOrder: [] };
+          stepOrder.push(p.step);
+        }
+        if (!groups[p.step].lectures[p.lecture]) {
+          groups[p.step].lectures[p.lecture] = [];
+          groups[p.step].lecOrder.push(p.lecture);
+        }
+        groups[p.step].lectures[p.lecture].push(p);
+      }
+
+      let html = '';
+      for (const step of stepOrder) {
+        html += `<div class="step-box" data-step="${escHtml(step)}">
+                  <div class="step-title">${escHtml(step)}</div>
+                  <div class="list-group lec-container">`;
+                  
+        for (const lec of groups[step].lecOrder) {
+          html += `<div class="lec-box" data-lec="${escHtml(lec)}">
+                    <div class="lec-title">${escHtml(lec)}</div>
+                    <div class="list-group prob-container">`;
+                    
+          for (const p of groups[step].lectures[lec]) {
+            html += `<div class="prob-item" data-id="${escHtml(p.id)}">${escHtml(p.title)}</div>`;
+          }
+          
+          html += `</div></div>`;
+        }
+        html += `</div></div>`;
+      }
+      
+      root.innerHTML = html;
+      initSortable();
+    }
+
+    function initSortable() {
+      // Initialize Sortable for Steps
+      new Sortable(document.getElementById('reorder-root'), {
+        animation: 150,
+        handle: '.step-title',
+        ghostClass: 'sortable-ghost'
+      });
+
+      // Initialize Sortable for Lectures
+      document.querySelectorAll('.lec-container').forEach(el => {
+        new Sortable(el, {
+          animation: 150,
+          handle: '.lec-title',
+          ghostClass: 'sortable-ghost'
+        });
+      });
+
+      // Initialize Sortable for Problems
+      document.querySelectorAll('.prob-container').forEach(el => {
+        new Sortable(el, {
+          animation: 150,
+          ghostClass: 'sortable-ghost'
+        });
+      });
+    }
+
+    async function saveOrder() {
+      const btn = document.querySelector('.save-btn');
+      const msg = document.getElementById('statusMessage');
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      
+      const payload = {};
+      let currentOrder = 1;
+      
+      // Iterate visually top-to-bottom
+      document.querySelectorAll('.prob-item').forEach(el => {
+        const id = el.dataset.id;
+        if (id) {
+          payload[id] = currentOrder++;
+        }
+      });
+      
+      try {
+        const res = await fetch('/api/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          msg.textContent = "Order saved successfully!";
+          setTimeout(() => msg.textContent = "", 3000);
+        } else {
+          msg.textContent = "Failed to save.";
+          msg.style.color = "#ee4c2b";
+        }
+      } catch (err) {
+        msg.textContent = "Error saving.";
+        msg.style.color = "#ee4c2b";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save New Order";
+      }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

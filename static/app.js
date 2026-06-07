@@ -171,7 +171,7 @@ function render() {
 
   // Build HTML
   let html = '';
-  const sortedSteps = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  const sortedSteps = [...new Set(visible.map(p => p.step))];
 
   for (const stepName of sortedSteps) {
     const step       = groups[stepName];
@@ -189,7 +189,7 @@ function render() {
 
     if (stepOpen) {
       html += `<div class="lectures-wrapper">`;
-      const sortedLectures = Object.keys(step.lectures).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+      const sortedLectures = [...new Set(visible.filter(p => p.step === stepName).map(p => p.lecture))];
       for (const lecName of sortedLectures) {
         const lec     = step.lectures[lecName];
         const lecKey  = stepName + '|' + lecName;
