@@ -35,6 +35,22 @@
     .sortable-ghost { opacity: 0.4; }
     .sortable-drag { background: #ee4c2b !important; border-color: #ff5e3a !important; color: white !important; }
     .sortable-drag .drag-handle, .sortable-drag .item-icon { color: white !important; }
+    .sortable-drag .drag-handle, .sortable-drag .item-icon { color: white !important; }
+    
+    /* Modal Styles */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: #181a20; border: 1px solid #3b3f4a; border-radius: 12px; width: 400px; max-width: 90%; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .modal-content h2 { margin-top: 0; margin-bottom: 20px; font-size: 20px; color: #fff; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #a1a1aa; margin-bottom: 6px; font-weight: 500; }
+    .form-group input, .form-group select { width: 100%; background: #0d0f13; border: 1px solid #3b3f4a; color: #fff; padding: 10px 12px; border-radius: 6px; font-family: 'Inter'; box-sizing: border-box; }
+    .form-group input:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-cancel { background: transparent; color: #a1a1aa; border: none; cursor: pointer; padding: 10px 16px; font-family: 'Inter'; font-weight: 500; }
+    .btn-cancel:hover { color: #fff; }
+    .btn-submit { background: #ee4c2b; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter'; }
+    .btn-submit:hover { background: #ff5e3a; }
   </style>
 </head>
 <body>
@@ -58,7 +74,39 @@
     <p style="color:#71717a;">Loading...</p>
   </div>
   
-  <button id="addBtn" class="add-btn" style="display: none;" onclick="handleAdd()"></button>
+  <button id="addBtn" class="add-btn" style="display: none;" onclick="openAddModal()"></button>
+
+  <!-- Quick Add Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Quick Add</h2>
+      <div class="form-group">
+        <label>Section Name (Step)</label>
+        <input type="text" id="modalStep" placeholder="e.g. Step 1 : Basics">
+      </div>
+      <div class="form-group">
+        <label>Subsection Name (Lecture)</label>
+        <input type="text" id="modalLecture" placeholder="e.g. Lec 1: Introduction">
+      </div>
+      <div class="form-group">
+        <label>Problem Title</label>
+        <input type="text" id="modalTitleInput" placeholder="Problem Name">
+      </div>
+      <div class="form-group">
+        <label>Difficulty</label>
+        <select id="modalDifficulty">
+          <option value="">Select Difficulty</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+        <button class="btn-submit" onclick="submitQuickAdd()" id="modalSubmitBtn">Add Problem</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     let tree = [];
@@ -130,18 +178,96 @@
       render();
     }
     
-    function handleAdd() {
+    function openAddModal() {
+      const modal = document.getElementById('addModal');
+      const stepInput = document.getElementById('modalStep');
+      const lecInput = document.getElementById('modalLecture');
+      const titleInput = document.getElementById('modalTitleInput');
+      const diffInput = document.getElementById('modalDifficulty');
+      const modalTitle = document.getElementById('modalTitle');
+      
+      stepInput.value = '';
+      lecInput.value = '';
+      titleInput.value = '';
+      diffInput.value = '';
+      
+      stepInput.disabled = false;
+      lecInput.disabled = false;
+
       if (currentStepIndex === null) {
-        const name = prompt("Enter new Section name:");
-        if (name) window.location.href = `/admin?step=${encodeURIComponent(name)}`;
+        modalTitle.textContent = "Add New Section";
       } else if (currentLectureIndex === null) {
-        const name = prompt("Enter new Subsection name:");
-        const sName = tree[currentStepIndex].name;
-        if (name) window.location.href = `/admin?step=${encodeURIComponent(sName)}&lecture=${encodeURIComponent(name)}`;
+        modalTitle.textContent = "Add New Subsection";
+        stepInput.value = tree[currentStepIndex].name;
+        stepInput.disabled = true;
       } else {
-        const sName = tree[currentStepIndex].name;
-        const lName = tree[currentStepIndex].lectures[currentLectureIndex].name;
-        window.location.href = `/admin?step=${encodeURIComponent(sName)}&lecture=${encodeURIComponent(lName)}`;
+        modalTitle.textContent = "Add New Problem";
+        stepInput.value = tree[currentStepIndex].name;
+        lecInput.value = tree[currentStepIndex].lectures[currentLectureIndex].name;
+        stepInput.disabled = true;
+        lecInput.disabled = true;
+      }
+      
+      modal.classList.add('active');
+      
+      // Auto-focus the next empty field
+      if (!stepInput.value) stepInput.focus();
+      else if (!lecInput.value) lecInput.focus();
+      else titleInput.focus();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+
+    async function submitQuickAdd() {
+      const stepVal = document.getElementById('modalStep').value.trim();
+      const lecVal = document.getElementById('modalLecture').value.trim();
+      const titleVal = document.getElementById('modalTitleInput').value.trim();
+      const diffVal = document.getElementById('modalDifficulty').value;
+      const btn = document.getElementById('modalSubmitBtn');
+      
+      if (!stepVal || !lecVal || !titleVal) {
+        alert("Please fill in Section, Subsection, and Problem Title.");
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      
+      const payload = {
+        step: stepVal,
+        lecture: lecVal,
+        title: titleVal,
+        difficulty: diffVal,
+        article: "",
+        youtube: "",
+        notes: "",
+        done: false,
+        revision: false,
+        practice: { tuf: [], naukri: [], leetcode: [], gfg: [], other: [] }
+      };
+      
+      try {
+        const res = await fetch('/api/problems', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          closeAddModal();
+          // Reload data from server so tree is fresh
+          await loadData();
+        } else {
+          const data = await res.json();
+          alert("Error: " + (data.error || "Failed to add problem"));
+        }
+      } catch (err) {
+        alert("Error saving problem.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Add Problem";
       }
     }
 
