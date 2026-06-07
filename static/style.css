@@ -387,9 +387,6 @@ input[type="checkbox"] {
 /* ─── Dialog ─────────────────────────────────────────── */
 dialog {
   margin: auto;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   border: 1px solid var(--border);
   border-top: 3px solid var(--brand);
   border-radius: var(--radius);
