@@ -10,38 +10,6 @@ const urlList = document.getElementById("urlList");
 
 let allProblems = [];
 
-const naturalSort = (a, b) => {
-  if (!a) return -1;
-  if (!b) return 1;
-  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
-};
-
-function populateDatalist(id, items) {
-  const dl = document.querySelector(id);
-  const uniqueItems = [...new Set(items.map(i => {
-    if (!i) return "";
-    const s = String(i).trim();
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }).filter(Boolean))].sort(naturalSort);
-  dl.innerHTML = uniqueItems.map((i) => `<option value="${i}"></option>`).join("");
-}
-
-function updateLectures() {
-  const selectedStep = stepInput.value;
-  const filteredProblems = selectedStep ? allProblems.filter((p) => p.step === selectedStep) : allProblems;
-  populateDatalist("#lectures", filteredProblems.map((p) => p.lecture));
-}
-
-function updateTitles() {
-  const selectedStep = stepInput.value;
-  const selectedLecture = lectureInput.value;
-  const filteredProblems = allProblems.filter((p) => 
-    (!selectedStep || p.step === selectedStep) && 
-    (!selectedLecture || p.lecture === selectedLecture)
-  );
-  populateDatalist("#titles", filteredProblems.map((p) => p.title));
-}
-
 function renderUrls(urls) {
   urlList.innerHTML = "";
   urls.forEach(u => addUrlRow(u));
@@ -83,14 +51,14 @@ function addUrlRow(val) {
   urlList.appendChild(row);
 }
 
-function handleTitleChange() {
-  const selectedTitle = titleInput.value.trim();
-  const existingProblem = allProblems.find((p) => p.title.trim() === selectedTitle);
+function loadProblem(title) {
+  const existingProblem = allProblems.find((p) => p.title.trim() === title.trim());
   
   if (existingProblem) {
     idInput.value = existingProblem.id;
     stepInput.value = existingProblem.step || "";
     lectureInput.value = existingProblem.lecture || "";
+    titleInput.value = existingProblem.title || "";
     document.querySelector('select[name="difficulty"]').value = existingProblem.difficulty || "";
     document.querySelector('input[name="article"]').value = existingProblem.article || "";
     document.querySelector('input[name="youtube"]').value = existingProblem.youtube || "";
@@ -112,7 +80,7 @@ function handleTitleChange() {
     const isOwner = author === currentUser || (currentUser === "rakesh" && author === "rakesh");
     
     if (isOwner) {
-      submitBtn.textContent = "Update problem";
+      submitBtn.textContent = "Save Changes";
       submitBtn.disabled = false;
       deleteBtn.style.display = "block";
       message.textContent = "";
@@ -123,26 +91,8 @@ function handleTitleChange() {
       message.textContent = "You cannot edit or delete default problems.";
     }
   } else {
-    // If idInput.value is not empty, it means we just transitioned from an existing problem to a new one.
-    // In this case, we wipe step and lecture to give a clean slate.
-    // Otherwise, we leave them alone so the user can pick step/lecture before typing a title.
-    if (idInput.value !== "" || selectedTitle === "") {
-      stepInput.value = "";
-      lectureInput.value = "";
-    }
-
-    idInput.value = "";
-    document.querySelector('select[name="difficulty"]').value = "";
-    document.querySelector('input[name="article"]').value = "";
-    document.querySelector('input[name="youtube"]').value = "";
-    document.querySelector('textarea[name="notes"]').value = "";
-    
-    renderUrls([]);
-    
-    submitBtn.textContent = "Add problem";
-    submitBtn.disabled = false;
-    deleteBtn.style.display = "none";
-    message.textContent = "";
+    message.textContent = "Problem not found.";
+    submitBtn.disabled = true;
   }
 }
 
@@ -150,34 +100,18 @@ fetch("/api/problems")
   .then((res) => res.json())
   .then((data) => {
     allProblems = data.problems || [];
-    populateDatalist("#steps", allProblems.map((p) => p.step));
-    updateLectures();
-    updateTitles();
     renderUrls([]); // initialize empty url box
     
-    // Deep linking: Check if ?title= exists in URL
     const urlParams = new URLSearchParams(window.location.search);
     const prefillTitle = urlParams.get("title");
-    const prefillStep = urlParams.get("step");
-    const prefillLecture = urlParams.get("lecture");
     
     if (prefillTitle) {
-      titleInput.value = prefillTitle;
-      handleTitleChange();
+      loadProblem(prefillTitle);
     } else {
-      if (prefillStep) stepInput.value = prefillStep;
-      if (prefillLecture) lectureInput.value = prefillLecture;
+      message.textContent = "No problem selected to edit.";
+      submitBtn.disabled = true;
     }
   });
-
-stepInput.addEventListener("input", () => {
-  updateLectures();
-  updateTitles();
-});
-lectureInput.addEventListener("input", () => {
-  updateTitles();
-});
-titleInput.addEventListener("input", handleTitleChange);
 
 deleteBtn.addEventListener("click", async () => {
   const problemId = idInput.value;
@@ -190,26 +124,15 @@ deleteBtn.addEventListener("click", async () => {
     return;
   }
   
-  message.textContent = "Deleted problem.";
-  allProblems = allProblems.filter((p) => p.id !== problemId);
-  form.reset();
-  renderUrls([]);
-  idInput.value = "";
-  submitBtn.textContent = "Add problem";
-  deleteBtn.style.display = "none";
-  
-  setTimeout(() => {
-    if (message.textContent === "Deleted problem.") message.textContent = "";
-  }, 3000);
-  
-  populateDatalist("#steps", allProblems.map((p) => p.step));
-  populateDatalist("#difficulties", allProblems.map((p) => p.difficulty));
-  updateLectures();
-  updateTitles();
+  message.textContent = "Deleted problem. Redirecting...";
+  setTimeout(() => window.location.href = "/", 1500);
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const problemId = idInput.value;
+  if (!problemId) return; // Only allow updates
+
   const data = Object.fromEntries(new FormData(form).entries());
   
   const allUrls = Array.from(document.querySelectorAll(".url-input"))
@@ -239,13 +162,11 @@ form.addEventListener("submit", async (event) => {
     practice: practice
   };
 
-  const problemId = data.id;
-  const isUpdate = !!problemId;
-  const url = isUpdate ? `/api/problems/${problemId}` : "/api/problems";
-  const method = isUpdate ? "PATCH" : "POST";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Saving...";
 
-  const res = await fetch(url, {
-    method: method,
+  const res = await fetch(`/api/problems/${problemId}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
@@ -253,36 +174,16 @@ form.addEventListener("submit", async (event) => {
   const result = await res.json();
   if (!res.ok) {
     message.textContent = result.error || "Could not save problem.";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Save Changes";
     return;
   }
   
-  message.textContent = isUpdate ? `Updated: ${result.title}` : `Added: ${result.title}`;
+  message.textContent = `Updated: ${result.title}`;
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Save Changes";
   
-  if (isUpdate) {
-    const index = allProblems.findIndex((p) => p.id === problemId);
-    if (index !== -1) {
-      allProblems[index] = result;
-    }
-    // Don't reset the form if we just updated an existing problem
-    // Instead, just clear the message after 3 seconds
-    setTimeout(() => {
-      if (message.textContent.startsWith("Updated:")) message.textContent = "";
-    }, 3000);
-  } else {
-    allProblems.push(result);
-    
-    const currentStep = data.step;
-    const currentLecture = data.lecture;
-    form.reset();
-    renderUrls([]);
-    stepInput.value = currentStep;
-    lectureInput.value = currentLecture;
-    idInput.value = "";
-    submitBtn.textContent = "Add problem";
-    deleteBtn.style.display = "none";
-  }
-  
-  populateDatalist("#steps", allProblems.map((p) => p.step));
-  updateLectures();
-  updateTitles();
+  setTimeout(() => {
+    if (message.textContent.startsWith("Updated:")) message.textContent = "";
+  }, 3000);
 });

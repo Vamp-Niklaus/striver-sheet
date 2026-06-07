@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="brand">
         <span class="brand-tag">Management</span>
-        <h1>Add/Edit Problem</h1>
+        <h1>Edit Problem</h1>
       </div>
       <div class="topbar-right">
         <span class="username-chip">👤 {{ username }}</span>
@@ -25,12 +25,9 @@
     <main class="admin-page">
       <form id="adminForm" class="admin-form">
         <input type="hidden" name="id">
-        <label>Step <input name="step" list="steps" required placeholder="Step 19 : Custom"></label>
-        <datalist id="steps"></datalist>
-        <label>Lecture <input name="lecture" list="lectures" required placeholder="Custom"></label>
-        <datalist id="lectures"></datalist>
-        <label>Problem title <input name="title" list="titles" required placeholder="Select or type new"></label>
-        <datalist id="titles"></datalist>
+        <label>Step (Locked) <input name="step" readonly style="opacity: 0.6; cursor: not-allowed;"></label>
+        <label>Lecture (Locked) <input name="lecture" readonly style="opacity: 0.6; cursor: not-allowed;"></label>
+        <label>Problem title <input name="title" required></label>
         <label>Difficulty 
           <select name="difficulty">
             <option value="">Select Difficulty</option>
@@ -51,7 +48,7 @@
           <label><input name="revision" type="checkbox"> Revision</label>
         </div>
         <div class="admin-actions">
-          <button type="submit" id="submitBtn">Add problem</button>
+          <button type="submit" id="submitBtn">Save Changes</button>
           <button type="button" id="deleteBtn" style="display: none;">Delete problem</button>
         </div>
         <p id="adminMessage" class="muted"></p>
