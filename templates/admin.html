@@ -30,8 +30,14 @@
         <datalist id="lectures"></datalist>
         <label>Problem title <input name="title" list="titles" required placeholder="Select or type new"></label>
         <datalist id="titles"></datalist>
-        <label>Difficulty <input name="difficulty" list="difficulties"></label>
-        <datalist id="difficulties"></datalist>
+        <label>Difficulty 
+          <select name="difficulty">
+            <option value="">Select Difficulty</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </label>
         <label>Article URL <input name="article" type="url"></label>
         <label>YouTube URL <input name="youtube" type="url"></label>
         <div class="dynamic-urls">

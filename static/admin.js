@@ -91,7 +91,7 @@ function handleTitleChange() {
     idInput.value = existingProblem.id;
     stepInput.value = existingProblem.step || "";
     lectureInput.value = existingProblem.lecture || "";
-    document.querySelector('input[name="difficulty"]').value = existingProblem.difficulty || "";
+    document.querySelector('select[name="difficulty"]').value = existingProblem.difficulty || "";
     document.querySelector('input[name="article"]').value = existingProblem.article || "";
     document.querySelector('input[name="youtube"]').value = existingProblem.youtube || "";
     document.querySelector('textarea[name="notes"]').value = existingProblem.notes || "";
@@ -132,7 +132,7 @@ function handleTitleChange() {
     }
 
     idInput.value = "";
-    document.querySelector('input[name="difficulty"]').value = "";
+    document.querySelector('select[name="difficulty"]').value = "";
     document.querySelector('input[name="article"]').value = "";
     document.querySelector('input[name="youtube"]').value = "";
     document.querySelector('textarea[name="notes"]').value = "";
@@ -151,7 +151,6 @@ fetch("/api/problems")
   .then((data) => {
     allProblems = data.problems || [];
     populateDatalist("#steps", allProblems.map((p) => p.step));
-    populateDatalist("#difficulties", allProblems.map((p) => p.difficulty));
     updateLectures();
     updateTitles();
     renderUrls([]); // initialize empty url box
@@ -278,7 +277,6 @@ form.addEventListener("submit", async (event) => {
   }
   
   populateDatalist("#steps", allProblems.map((p) => p.step));
-  populateDatalist("#difficulties", allProblems.map((p) => p.difficulty));
   updateLectures();
   updateTitles();
 });
