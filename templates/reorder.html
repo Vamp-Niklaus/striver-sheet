@@ -14,24 +14,27 @@
     h1 { margin: 0; font-size: 24px; color: #fff; }
     .save-btn { background: #ee4c2b; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter'; }
     .save-btn:hover { background: #ff5e3a; }
+    .add-btn { background: transparent; border: 1px dashed #3b3f4a; color: #a1a1aa; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; text-align: left; font-size: 14px; margin-top: 12px; }
+    .add-btn:hover { background: #181a20; color: #fff; border-color: #71717a; }
     .back-btn { color: #a1a1aa; text-decoration: none; padding: 10px; font-weight: 500; }
     .back-btn:hover { color: #fff; }
     
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-size: 14px; color: #a1a1aa; background: #181a20; padding: 12px 16px; border-radius: 8px; border: 1px solid #2c303a; }
+    .crumb { cursor: pointer; color: #e4e4e7; }
+    .crumb:hover { color: #ee4c2b; text-decoration: underline; }
+    .crumb-divider { color: #71717a; }
+    
     .list-group { min-height: 20px; }
-    .step-box { background: #181a20; border: 1px solid #2c303a; border-radius: 8px; margin-bottom: 12px; padding: 12px; }
-    .step-title { font-weight: 700; color: #fff; margin-bottom: 8px; cursor: grab; display: flex; align-items: center; }
-    .step-title::before { content: "☰"; margin-right: 8px; color: #71717a; }
-    
-    .lec-box { background: #20222a; border: 1px solid #3b3f4a; border-radius: 6px; margin-bottom: 8px; padding: 10px; margin-left: 20px; }
-    .lec-title { font-weight: 600; color: #e4e4e7; margin-bottom: 6px; cursor: grab; display: flex; align-items: center; }
-    .lec-title::before { content: "☰"; margin-right: 8px; color: #71717a; font-size: 12px; }
-    
-    .prob-item { background: #2c303a; border-radius: 4px; padding: 8px 12px; margin-bottom: 4px; margin-left: 20px; cursor: grab; display: flex; align-items: center; font-size: 14px; }
-    .prob-item::before { content: "⋮⋮"; margin-right: 10px; color: #71717a; font-size: 14px; letter-spacing: -2px; }
-    .prob-item:hover { background: #3b3f4a; }
+    .list-item { background: #181a20; border: 1px solid #2c303a; border-radius: 8px; margin-bottom: 8px; padding: 14px 16px; display: flex; align-items: center; cursor: pointer; font-size: 15px; font-weight: 500; }
+    .list-item:hover { background: #20222a; border-color: #3b3f4a; }
+    .drag-handle { cursor: grab; color: #71717a; margin-right: 12px; font-size: 16px; display: flex; align-items: center; }
+    .drag-handle::before { content: "⋮⋮"; letter-spacing: -2px; }
+    .item-icon { margin-right: 12px; font-size: 18px; }
+    .item-content { flex-grow: 1; }
     
     .sortable-ghost { opacity: 0.4; }
-    .sortable-drag { background: #ee4c2b !important; color: white !important; }
+    .sortable-drag { background: #ee4c2b !important; border-color: #ff5e3a !important; color: white !important; }
+    .sortable-drag .drag-handle, .sortable-drag .item-icon { color: white !important; }
   </style>
 </head>
 <body>
@@ -46,87 +49,176 @@
       <button class="save-btn" onclick="saveOrder()">Save New Order</button>
     </div>
   </header>
-
-  <div id="reorder-root" class="list-group">
-    <p style="color:#71717a;">Loading problems...</p>
+  
+  <div class="breadcrumbs" id="breadcrumbs">
+    <!-- Populated by JS -->
   </div>
 
+  <div id="reorder-root" class="list-group">
+    <p style="color:#71717a;">Loading...</p>
+  </div>
+  
+  <button id="addBtn" class="add-btn" style="display: none;" onclick="handleAdd()"></button>
+
   <script>
-    let allProblems = [];
+    let tree = [];
+    let currentStepIndex = null;
+    let currentLectureIndex = null;
+    let sortableInstance = null;
 
     async function loadData() {
       const res = await fetch('/api/problems');
       const data = await res.json();
-      allProblems = data.problems || [];
+      buildTree(data.problems || []);
       render();
     }
 
+    function buildTree(flatProblems) {
+      tree = [];
+      const stepMap = {};
+      
+      for (const p of flatProblems) {
+        if (!stepMap[p.step]) {
+          const stepObj = { name: p.step, lectures: [], lecMap: {} };
+          tree.push(stepObj);
+          stepMap[p.step] = stepObj;
+        }
+        const s = stepMap[p.step];
+        
+        if (!s.lecMap[p.lecture]) {
+          const lecObj = { name: p.lecture, problems: [] };
+          s.lectures.push(lecObj);
+          s.lecMap[p.lecture] = lecObj;
+        }
+        const l = s.lecMap[p.lecture];
+        
+        l.problems.push(p);
+      }
+    }
+
+    function renderBreadcrumbs() {
+      const bc = document.getElementById('breadcrumbs');
+      let html = `<span class="crumb" onclick="goToRoot()">🏠 Home</span>`;
+      
+      if (currentStepIndex !== null) {
+        const sName = tree[currentStepIndex].name;
+        html += `<span class="crumb-divider">/</span><span class="crumb" onclick="goToStep(${currentStepIndex})">📁 ${escHtml(sName)}</span>`;
+      }
+      if (currentLectureIndex !== null) {
+        const lName = tree[currentStepIndex].lectures[currentLectureIndex].name;
+        html += `<span class="crumb-divider">/</span><span style="color:#e4e4e7;">📁 ${escHtml(lName)}</span>`;
+      }
+      
+      bc.innerHTML = html;
+    }
+
+    function goToRoot() {
+      currentStepIndex = null;
+      currentLectureIndex = null;
+      render();
+    }
+
+    function goToStep(sIdx) {
+      currentStepIndex = sIdx;
+      currentLectureIndex = null;
+      render();
+    }
+
+    function goToLecture(sIdx, lIdx) {
+      currentStepIndex = sIdx;
+      currentLectureIndex = lIdx;
+      render();
+    }
+    
+    function handleAdd() {
+      if (currentStepIndex === null) {
+        const name = prompt("Enter new Section name:");
+        if (name) window.location.href = `/admin?step=${encodeURIComponent(name)}`;
+      } else if (currentLectureIndex === null) {
+        const name = prompt("Enter new Subsection name:");
+        const sName = tree[currentStepIndex].name;
+        if (name) window.location.href = `/admin?step=${encodeURIComponent(sName)}&lecture=${encodeURIComponent(name)}`;
+      } else {
+        const sName = tree[currentStepIndex].name;
+        const lName = tree[currentStepIndex].lectures[currentLectureIndex].name;
+        window.location.href = `/admin?step=${encodeURIComponent(sName)}&lecture=${encodeURIComponent(lName)}`;
+      }
+    }
+
     function render() {
+      renderBreadcrumbs();
       const root = document.getElementById('reorder-root');
+      const addBtn = document.getElementById('addBtn');
+      let html = '';
       
-      // Group problems exactly in the order they currently appear
-      const groups = {};
-      const stepOrder = [];
-      
-      for (const p of allProblems) {
-        if (!groups[p.step]) {
-          groups[p.step] = { lectures: {}, lecOrder: [] };
-          stepOrder.push(p.step);
-        }
-        if (!groups[p.step].lectures[p.lecture]) {
-          groups[p.step].lectures[p.lecture] = [];
-          groups[p.step].lecOrder.push(p.lecture);
-        }
-        groups[p.step].lectures[p.lecture].push(p);
+      if (sortableInstance) {
+        sortableInstance.destroy();
       }
 
-      let html = '';
-      for (const step of stepOrder) {
-        html += `<div class="step-box" data-step="${escHtml(step)}">
-                  <div class="step-title">${escHtml(step)}</div>
-                  <div class="list-group lec-container">`;
-                  
-        for (const lec of groups[step].lecOrder) {
-          html += `<div class="lec-box" data-lec="${escHtml(lec)}">
-                    <div class="lec-title">${escHtml(lec)}</div>
-                    <div class="list-group prob-container">`;
-                    
-          for (const p of groups[step].lectures[lec]) {
-            html += `<div class="prob-item" data-id="${escHtml(p.id)}">${escHtml(p.title)}</div>`;
-          }
-          
-          html += `</div></div>`;
-        }
-        html += `</div></div>`;
+      if (currentStepIndex === null) {
+        // Render Steps
+        tree.forEach((s, idx) => {
+          html += `<div class="list-item" data-idx="${idx}">
+            <div class="drag-handle"></div>
+            <div class="item-icon">📁</div>
+            <div class="item-content" onclick="goToStep(${idx})">${escHtml(s.name)} <span style="color:#71717a; font-size:12px; margin-left:8px;">(${s.lectures.length} subsections)</span></div>
+          </div>`;
+        });
+        addBtn.textContent = "+ Add new Section (Step)";
+        addBtn.style.display = "block";
+        
+      } else if (currentLectureIndex === null) {
+        // Render Lectures
+        const s = tree[currentStepIndex];
+        s.lectures.forEach((l, idx) => {
+          html += `<div class="list-item" data-idx="${idx}">
+            <div class="drag-handle"></div>
+            <div class="item-icon">📁</div>
+            <div class="item-content" onclick="goToLecture(${currentStepIndex}, ${idx})">${escHtml(l.name)} <span style="color:#71717a; font-size:12px; margin-left:8px;">(${l.problems.length} problems)</span></div>
+          </div>`;
+        });
+        addBtn.textContent = "+ Add new Subsection (Lecture)";
+        addBtn.style.display = "block";
+        
+      } else {
+        // Render Problems
+        const l = tree[currentStepIndex].lectures[currentLectureIndex];
+        l.problems.forEach((p, idx) => {
+          html += `<div class="list-item" data-idx="${idx}">
+            <div class="drag-handle"></div>
+            <div class="item-icon">📄</div>
+            <div class="item-content" style="cursor:default;">${escHtml(p.title)}</div>
+          </div>`;
+        });
+        addBtn.textContent = "+ Add new Problem";
+        addBtn.style.display = "block";
       }
       
       root.innerHTML = html;
-      initSortable();
-    }
 
-    function initSortable() {
-      // Initialize Sortable for Steps
-      new Sortable(document.getElementById('reorder-root'), {
+      // Initialize Sortable
+      sortableInstance = new Sortable(root, {
         animation: 150,
-        handle: '.step-title',
-        ghostClass: 'sortable-ghost'
-      });
-
-      // Initialize Sortable for Lectures
-      document.querySelectorAll('.lec-container').forEach(el => {
-        new Sortable(el, {
-          animation: 150,
-          handle: '.lec-title',
-          ghostClass: 'sortable-ghost'
-        });
-      });
-
-      // Initialize Sortable for Problems
-      document.querySelectorAll('.prob-container').forEach(el => {
-        new Sortable(el, {
-          animation: 150,
-          ghostClass: 'sortable-ghost'
-        });
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        onEnd: function (evt) {
+          const oldIdx = evt.oldIndex;
+          const newIdx = evt.newIndex;
+          if (oldIdx === newIdx) return;
+          
+          if (currentStepIndex === null) {
+            const moved = tree.splice(oldIdx, 1)[0];
+            tree.splice(newIdx, 0, moved);
+          } else if (currentLectureIndex === null) {
+            const lecs = tree[currentStepIndex].lectures;
+            const moved = lecs.splice(oldIdx, 1)[0];
+            lecs.splice(newIdx, 0, moved);
+          } else {
+            const probs = tree[currentStepIndex].lectures[currentLectureIndex].problems;
+            const moved = probs.splice(oldIdx, 1)[0];
+            probs.splice(newIdx, 0, moved);
+          }
+        }
       });
     }
 
@@ -139,13 +231,16 @@
       const payload = {};
       let currentOrder = 1;
       
-      // Iterate visually top-to-bottom
-      document.querySelectorAll('.prob-item').forEach(el => {
-        const id = el.dataset.id;
-        if (id) {
-          payload[id] = currentOrder++;
+      // Flatten the tree to generate sequential orders
+      for (const s of tree) {
+        for (const l of s.lectures) {
+          for (const p of l.problems) {
+            if (p.id) {
+              payload[p.id] = currentOrder++;
+            }
+          }
         }
-      });
+      }
       
       try {
         const res = await fetch('/api/reorder', {

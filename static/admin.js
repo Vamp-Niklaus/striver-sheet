@@ -158,9 +158,15 @@ fetch("/api/problems")
     // Deep linking: Check if ?title= exists in URL
     const urlParams = new URLSearchParams(window.location.search);
     const prefillTitle = urlParams.get("title");
+    const prefillStep = urlParams.get("step");
+    const prefillLecture = urlParams.get("lecture");
+    
     if (prefillTitle) {
       titleInput.value = prefillTitle;
       handleTitleChange();
+    } else {
+      if (prefillStep) stepInput.value = prefillStep;
+      if (prefillLecture) lectureInput.value = prefillLecture;
     }
   });
 
