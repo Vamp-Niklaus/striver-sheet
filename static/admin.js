@@ -21,10 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
     indentUnit: 4,
     viewportMargin: Infinity
   });
-  
-  document.getElementById("maximizeAdminNoteBtn").addEventListener("click", () => {
-    adminNotesMirror.setOption("fullScreen", !adminNotesMirror.getOption("fullScreen"));
-  });
 });
 
 function renderUrls(urls) {
