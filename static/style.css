@@ -396,12 +396,24 @@ dialog {
   background: var(--surface-2);
   color: var(--text);
   padding: 0;
-  width: min(760px, calc(100vw - 32px));
+  width: 90vw;
+  height: 90vh;
+  max-width: 1400px;
   font-family: 'Inter', sans-serif;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 dialog::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(4px); }
 
+dialog form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+dialog .CodeMirror {
+  flex-grow: 1;
+  height: auto !important;
+}
 .dialog-head {
   display: flex;
   align-items: center;
