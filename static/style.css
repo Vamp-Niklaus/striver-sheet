@@ -560,3 +560,16 @@ dialog .CodeMirror {
   .toolbar { flex-direction: column; }
   .admin-form { grid-template-columns: 1fr; }
 }
+
+/* ─── Highlight Problem ──────────────────────────────── */
+@keyframes pulse-highlight {
+  0% { background: rgba(238, 76, 43, 0.3) !important; }
+  100% { background: rgba(238, 76, 43, 0.05) !important; }
+}
+.highlight-problem td {
+  background: rgba(238, 76, 43, 0.05) !important;
+  animation: pulse-highlight 2s ease-out;
+}
+.highlight-problem td:first-child {
+  box-shadow: inset 3px 0 0 var(--brand);
+}

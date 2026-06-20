@@ -93,10 +93,10 @@ def listify(value):
 
 @app.get("/")
 def index():
-    if not session.get('user_id'):
+    if not session.get('user_id') and not request.args.get('problem'):
         return redirect(url_for('login'))
     seed_mongo()
-    return render_template("index.html", username=session['user_id'])
+    return render_template("index.html", username=session.get('user_id', 'Guest'))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -167,14 +167,18 @@ def save_reorder():
 
 @app.get("/api/problems")
 def get_problems():
-    if not session.get('user_id'):
-        return jsonify({"error": "Unauthorized"}), 401
+    current_user = session.get('user_id')
+    if not current_user:
+        current_user = "guest"
+        
     seed_mongo()
     
-    current_user = session['user_id']
     query = {"$or": [{"author": "rakesh"}, {"author": current_user}, {"author": {"$exists": False}}]}
     global_problems = list(problems_collection.find(query).sort("order", 1))
-    user_progress = list(user_progress_collection.find({"user_id": current_user}))
+    
+    user_progress = []
+    if current_user != "guest":
+        user_progress = list(user_progress_collection.find({"user_id": current_user}))
     
     # Map progress by problem_id for fast lookup
     progress_map = {p["problem_id"]: p for p in user_progress}

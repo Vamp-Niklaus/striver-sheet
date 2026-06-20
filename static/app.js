@@ -12,6 +12,7 @@ let expandedSteps    = {};   // stepName -> bool (true=open)
 let expandedLectures = {};   // "step|lec" -> bool
 let currentFilters   = { search: '', step: '', difficulty: '', status: '', revision: '', link: '' };
 let scrollY          = 0;
+let targetProblemId  = new URLSearchParams(window.location.search).get('problem');
 
 // Debounce timer for state saving
 let saveTimer = null;
@@ -37,6 +38,7 @@ const ICONS = {
   gfg:     `<svg viewBox="0 0 48 48" fill="none"><text x="4" y="34" font-size="28" font-weight="bold" fill="#fff" font-family="sans-serif">G</text></svg>`,
   chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`,
   edit:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  copy:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
 };
 
 // ── Helpers ───────────────────────────────────────────
@@ -228,7 +230,9 @@ function render() {
 
         for (const p of lec.problems) {
           const hasNote = !!(p.notes && p.notes.trim());
-          html += `<tr>
+          const isTarget = targetProblemId && p.id === targetProblemId;
+          const shareUrl = `${window.location.origin}/?problem=${p.id}`;
+          html += `<tr ${isTarget ? 'class="highlight-problem"' : ''} id="problem-${escHtml(p.id)}">
             <td><input type="checkbox" data-action="done" data-id="${escHtml(p.id)}" ${p.done ? 'checked' : ''}></td>
             <td><span class="problem-name">${p.article
               ? `<a href="${escHtml(p.article)}" target="_blank" rel="noreferrer">${escHtml(p.title)}</a>`
@@ -245,6 +249,7 @@ function render() {
             <td style="white-space: nowrap;">
               <button class="star-btn ${p.revision ? 'on' : 'off'}" data-action="revision" data-id="${escHtml(p.id)}" title="Toggle revision">★</button>
               <a class="icon-link" href="/admin/edit?title=${encodeURIComponent(p.title)}" target="_blank" title="Edit problem" style="margin-left: 8px; vertical-align: middle;">${ICONS.edit}</a>
+              <button class="icon-link icon-link--article" data-action="copy" data-url="${escHtml(shareUrl)}" title="Copy link" style="margin-left: 8px; vertical-align: middle;">${ICONS.copy}</button>
             </td>
           </tr>`;
         }
@@ -357,6 +362,17 @@ root.addEventListener('click', async e => {
     }
     return;
   }
+
+  // Copy button
+  const copyBtn = e.target.closest('[data-action="copy"]');
+  if (copyBtn) {
+    navigator.clipboard.writeText(copyBtn.dataset.url).then(() => {
+      const oldHtml = copyBtn.innerHTML;
+      copyBtn.innerHTML = '✅';
+      setTimeout(() => copyBtn.innerHTML = oldHtml, 2000);
+    });
+    return;
+  }
 });
 
 root.addEventListener('change', async e => {
@@ -429,6 +445,18 @@ async function boot() {
   const data = await res.json();
   allProblems = data.problems || [];
 
+  // Check if we have a targeted problem to open
+  if (targetProblemId) {
+    const p = allProblems.find(x => x.id === targetProblemId);
+    if (p) {
+      expandedSteps = {};
+      expandedLectures = {};
+      expandedSteps[p.step] = true;
+      expandedLectures[p.step + '|' + p.lecture] = true;
+      currentFilters = { search: '', step: '', difficulty: '', status: '', revision: '', link: '' };
+    }
+  }
+
   // 3. Populate filter dropdowns
   fillSelect(stepSel, allProblems.map(p => p.step));
   fillSelect(diffSel, allProblems.map(p => p.difficulty));
@@ -443,8 +471,17 @@ async function boot() {
   // 5. Render
   render();
 
-  // 6. Restore scroll position
-  if (scrollY > 0) {
+  // 6. Restore scroll position or scroll to target
+  if (targetProblemId) {
+    setTimeout(() => {
+      const el = document.getElementById(`problem-${targetProblemId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Clear target so it doesn't stay highlighted forever
+        targetProblemId = null;
+      }
+    }, 300);
+  } else if (scrollY > 0) {
     requestAnimationFrame(() => window.scrollTo(0, scrollY));
   }
 }
